@@ -7,6 +7,7 @@ export default defineController(() => ({
       data: {
         email: body.email,
         name: body.name,
+        createdAt: new Date() // 現在の日時を設定
       },
     });
     return { status: 201, body: user };
