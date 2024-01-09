@@ -21,10 +21,7 @@ export const PrivateTask = (props: { task: Task; fetchTasks: () => Promise<void>
     await props.fetchTasks();
   };
   const deleteTask = async () => {
-    await apiClient.private.tasks
-      ._taskId(task.id)
-      .delete()
-      .catch(returnNull);
+    await apiClient.private.tasks._taskId(task.id).delete().catch(returnNull);
     await props.fetchTasks();
   };
   const updateTaskLabel = async () => {
