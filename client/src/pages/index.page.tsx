@@ -13,49 +13,39 @@ import styles from './index.module.css';
 
 const Home = () => {
   const [user] = useAtom(userAtom);
-  const fileRef = useRef<HTMLInputElement | null>(null);
   const [tasks, setTasks] = useState<TaskModel[]>();
-  const [label, setLabel] = useState('');
-  const [image, setImage] = useState<File>();
-  const [previewImageUrl, setPreviewImageUrl] = useState('');
-  const isPrivateTask = (task: TaskModel) => user?.id === task.author.userId;
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [dueDate, setDueDate] = useState('');
 
-  const inputLabel = (e: ChangeEvent<HTMLInputElement>) => {
-    setLabel(e.target.value);
+  const inputTitle = (e: ChangeEvent<HTMLInputElement>) => {
+    setTitle(e.target.value);
   };
-  const inputFile = (e: ChangeEvent<HTMLInputElement>) => {
-    setImage(e.target.files?.[0]);
+  const inputDescription = (e: ChangeEvent<HTMLInputElement>) => {
+    setDescription(e.target.value);
+  };
+  const inputDueDate = (e: ChangeEvent<HTMLInputElement>) => {
+    setDueDate(e.target.value);
   };
   const fetchTasks = async () => {
-    const tasks = await apiClient.public.tasks.$get().catch(returnNull);
+    const tasks = await apiClient.api.private.tasks.$get().catch(returnNull);
 
     if (tasks !== null) setTasks(tasks);
   };
   const createTask = async (e: FormEvent) => {
     e.preventDefault();
-    if (!label || !fileRef.current) return;
+    if (!title) return;
 
-    await apiClient.private.tasks.post({ body: { label, image } }).catch(returnNull);
-    setLabel('');
-    setImage(undefined);
-    setPreviewImageUrl('');
-    fileRef.current.value = '';
+    await apiClient.api.private.tasks.$post({ body: { title, description, dueDate, userId: user?.id ?? '' } }).catch(returnNull);
+    setTitle('');
+    setDescription('');
+    setDueDate('');
     await fetchTasks();
   };
 
   useEffect(() => {
     fetchTasks();
   }, [user?.id]);
-
-  useEffect(() => {
-    if (!image) return;
-
-    const newUrl = URL.createObjectURL(image);
-    setPreviewImageUrl(newUrl);
-    return () => {
-      URL.revokeObjectURL(newUrl);
-    };
-  }, [image]);
 
   if (!tasks) return <Loading visible />;
 
@@ -68,38 +58,39 @@ const Home = () => {
             <li className={styles.createTask}>
               <input
                 type="text"
-                placeholder="What is happening?!"
-                value={label}
-                onChange={inputLabel}
+                placeholder="Task title"
+                value={title}
+                onChange={inputTitle}
                 className={styles.createTaskInput}
               />
-              {image && <img src={previewImageUrl} className={styles.taskImage} />}
               <input
-                type="file"
-                ref={fileRef}
-                accept=".png,.jpg,.jpeg,.gif,.webp,.svg"
-                onChange={inputFile}
+                type="text"
+                placeholder="Task description"
+                value={description}
+                onChange={inputDescription}
+                className={styles.createTaskInput}
+              />
+              <input
+                type="date"
+                value={dueDate}
+                onChange={inputDueDate}
+                className={styles.createTaskInput}
               />
               <button onClick={createTask} className={styles.postBtn}>
-                POST
+                Create Task
               </button>
             </li>
           )}
           {tasks.map((task) => (
             <div key={task.id}>
               <li className={styles.taskHeader}>
-                <div className={styles.authorName}>{task.author.name}</div>
-                <ElapsedTime createdTime={task.createdTime} />
+                <div className={styles.authorName}>{task.title}</div>
+                <ElapsedTime createdTime={new Date(task.createdAt).getTime()} />
               </li>
               <li className={styles.label}>
-                {isPrivateTask(task) ? (
-                  <PrivateTask task={task} fetchTasks={fetchTasks} />
-                ) : (
-                  <span>{task.label}</span>
-                )}
-                {task.image && (
-                  <img src={task.image.url} alt={task.label} className={styles.taskImage} />
-                )}
+                <span>{task.description}</span>
+                {task.isComplete && <span>(Completed)</span>}
+                {task.dueDate && <span>Due: {task.dueDate}</span>}
               </li>
             </div>
           ))}
