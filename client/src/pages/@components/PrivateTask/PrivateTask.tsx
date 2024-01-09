@@ -1,10 +1,10 @@
-import type { TaskModel } from '$/api/@types/models';
+import type { Task } from '$/api/@types';
 import { useState, type ChangeEvent } from 'react';
 import { apiClient } from 'src/utils/apiClient';
 import { returnNull } from 'src/utils/returnNull';
 import styles from './PrivateTask.module.css';
 
-export const PrivateTask = (props: { task: TaskModel; fetchTasks: () => Promise<void> }) => {
+export const PrivateTask = (props: { task: Task; fetchTasks: () => Promise<void> }) => {
   const { task } = props;
   const [editingTaskId, setEditingTaskId] = useState<string>();
   const [editingLabel, setEditingLabel] = useState('');
@@ -15,17 +15,22 @@ export const PrivateTask = (props: { task: TaskModel; fetchTasks: () => Promise<
   };
   const toggleDone = async () => {
     await apiClient.private.tasks
-      .patch({ body: { taskId: task.id, done: !task.done, label: task.label } })
+      ._taskId(task.id)
+      .patch({ body: { isComplete: !task.isComplete, title: task.title } })
       .catch(returnNull);
     await props.fetchTasks();
   };
   const deleteTask = async () => {
-    await apiClient.private.tasks.delete({ body: { taskId: task.id } }).catch(returnNull);
+    await apiClient.private.tasks
+      ._taskId(task.id)
+      .delete()
+      .catch(returnNull);
     await props.fetchTasks();
   };
   const updateTaskLabel = async () => {
     await apiClient.private.tasks
-      .patch({ body: { taskId: task.id, done: task.done, label: editingLabel } })
+      ._taskId(task.id)
+      .patch({ body: { isComplete: task.isComplete, title: editingLabel } })
       .catch(returnNull);
     setEditingTaskId(undefined);
     setEditingLabel('');
@@ -33,13 +38,13 @@ export const PrivateTask = (props: { task: TaskModel; fetchTasks: () => Promise<
   };
   const startEditTask = () => {
     setEditingTaskId(task.id);
-    setEditingLabel(task.label);
+    setEditingLabel(task.title);
   };
 
   return (
     <label>
       <div className={styles.editGroup}>
-        <input type="checkbox" checked={task.done} onChange={toggleDone} />
+        <input type="checkbox" checked={task.isComplete} onChange={toggleDone} />
         {isEditing ? (
           <input
             type="text"
@@ -48,7 +53,7 @@ export const PrivateTask = (props: { task: TaskModel; fetchTasks: () => Promise<
             onChange={editLabel}
           />
         ) : (
-          <span>{task.label}</span>
+          <span>{task.title}</span>
         )}
       </div>
       <div className={styles.btnGroup}>

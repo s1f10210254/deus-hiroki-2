@@ -1,19 +1,18 @@
-import type { TaskModel } from '$/api/@types/models';
+import type { Task } from '$/api/@types';
 import { useAtom } from 'jotai';
 import type { ChangeEvent, FormEvent } from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ElapsedTime } from 'src/components/ElapsedTime/ElapsedTime';
 import { Loading } from 'src/components/Loading/Loading';
 import { BasicHeader } from 'src/pages/@components/BasicHeader/BasicHeader';
 import { apiClient } from 'src/utils/apiClient';
 import { returnNull } from 'src/utils/returnNull';
 import { userAtom } from '../atoms/user';
-import { PrivateTask } from './@components/PrivateTask/PrivateTask';
 import styles from './index.module.css';
 
 const Home = () => {
   const [user] = useAtom(userAtom);
-  const [tasks, setTasks] = useState<TaskModel[]>();
+  const [tasks, setTasks] = useState<Task[]>();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState('');
@@ -28,7 +27,7 @@ const Home = () => {
     setDueDate(e.target.value);
   };
   const fetchTasks = async () => {
-    const tasks = await apiClient.api.private.tasks.$get().catch(returnNull);
+    const tasks = await apiClient.private.tasks.$get().catch(returnNull);
 
     if (tasks !== null) setTasks(tasks);
   };
@@ -36,7 +35,9 @@ const Home = () => {
     e.preventDefault();
     if (!title) return;
 
-    await apiClient.api.private.tasks.$post({ body: { title, description, dueDate, userId: user?.id ?? '' } }).catch(returnNull);
+    await apiClient.private.tasks
+      .$post({ body: { title, description, dueDate, userId: user?.id ?? '' } })
+      .catch(returnNull);
     setTitle('');
     setDescription('');
     setDueDate('');
